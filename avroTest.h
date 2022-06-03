@@ -137,7 +137,7 @@ void streamSeek(const std::string& inFileName)
     std::cout << d->decodeBool() << std::endl;
     std::cout << d->decodeInt() << std::endl;
     std::cout << d->decodeInt() << std::endl;
-    d->init(*in); // Seems like we must re-init the decoder THEN seek the stream
+    d->init(*in); // Seems like we must re-init the decoder then seek the stream
     in->seek(0);
 
     std::cout << d->decodeString() << std::endl;

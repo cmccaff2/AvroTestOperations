@@ -10,6 +10,7 @@
 #include "cpx.hh"
 #include "avroTest.h"
 
+// Perform a series of Avro operations ranging from low-level encoding/decoding to high-level data file handling
 int main(int argc, const char * argv[]) {
     // Directly write binary encoding of c1 to file
     // object must have an encode/decode function as seen in cpx.h
@@ -23,10 +24,10 @@ int main(int argc, const char * argv[]) {
     avroTest::objFromFile(c2, "cpx.b");
     std::cout << '(' << c2.re << ", " << c2.im << ')' << std::endl;
     
-    avroTest::encodeMultiple("multi.b"); // Encode multiple datatypes without schema
-    avroTest::decodeMultiple("multi.b"); // Decode values from encodeMultiple
+    avroTest::encodeMultiple("multi.b"); // Encode and write multiple datatypes without header/schema
+    avroTest::decodeMultiple("multi.b"); // Read and decode values written by encodeMultiple
     
-    // Reads 13 bytes from "multi.b"
+    // Reads the 13 bytes written to "multi.b"
     const u_int8_t* bytes = avroTest::readBytes("multi.b", 13);
     avroTest::decodeBytes(bytes); // Decodes the data first written by encodeMultiple
 
@@ -46,9 +47,11 @@ int main(int argc, const char * argv[]) {
     avroTest::parseBinaryFile(multiSchema, "multi.b"); // Use the schema to read the file
     
     // Create full avro data file with header including schema
-    avroTest::createDataFile("multi.avro", multiSchema, 100);
+    avroTest::createGenericDataFile("multi.avro", multiSchema, 100);
     
-    avroTest::readDataFile("multi.avro");
+    avroTest::readGenericDataFile("multi.avro");
     
+    avroTest::writeCPXFile("cpx.avro", 50);
+    avroTest::readCPXFile("cpx.avro");
     return 0;
 }

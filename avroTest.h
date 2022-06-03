@@ -10,6 +10,8 @@
 
 #include <fstream>
 
+#include "cpx.hh"
+
 #include "avro/Encoder.hh"
 #include "avro/Decoder.hh"
 #include "avro/ValidSchema.hh"
@@ -185,19 +187,19 @@ void parseBinaryFile(avro::ValidSchema schema, const std::string& inFileName)
 
 //******** Tests dealing with full Avro datafiles ********//
     
-// Create an avro file with a header containing metadata including the schema
+// Create an avro file with a header containing metadata such as the schema
 // numEntries is the number of sample records to add to filename
-void createDataFile(const std::string& filename, avro::ValidSchema schema, int numEntries)
+void createGenericDataFile(const std::string& fileName, avro::ValidSchema schema, int numEntries)
 {
     // Writer handles header creation, compression (if requested), encoding, creating sync markers
-    avro::DataFileWriter<avro::GenericDatum> dataWriter(filename.c_str(), schema);
+    avro::DataFileWriter<avro::GenericDatum> dataWriter(fileName.c_str(), schema);
     
     avro::GenericDatum datum(schema); // Object that can contain any avro type
 
     for (int i = 0; i < numEntries; i++) { // Add the specified number of entries to the file
         
-        if (datum.type() == avro::AVRO_RECORD) {
-            avro::GenericRecord& rec = datum.value<avro::GenericRecord>(); // First obtain the record stored in the datum
+        if (datum.type() == avro::AVRO_RECORD) { // Determine the type defined by the schema
+            avro::GenericRecord& rec = datum.value<avro::GenericRecord>(); // Obtain the record stored in the datum
             
             // Need to set each field of the record
             for (int fieldNum = 0; fieldNum < rec.fieldCount(); fieldNum++) { // Iterate through fields
@@ -240,18 +242,19 @@ void createDataFile(const std::string& filename, avro::ValidSchema schema, int n
     dataWriter.close();
 }
 
-void readDataFile(const std::string& fileName)
+// Read a full avro data file without knowing the types ahead of time
+void readGenericDataFile(const std::string& fileName)
 {
     // Reader handles interpreting of header, decompression, decoding
     // Can pass a schema or rely on schema in file headers
     avro::DataFileReader<avro::GenericDatum> dataReader(fileName.c_str());
 
-    avro::GenericDatum datum(dataReader.dataSchema());
-    while (dataReader.read(datum)) // Read all entries
+    avro::GenericDatum datum(dataReader.dataSchema()); // Construct a datum matching the schema
+    while (dataReader.read(datum)) // Read all entries, returns false when there are no more
     {
         if(datum.type() == avro::AVRO_RECORD)
         {
-            avro::GenericRecord& rec = datum.value<avro::GenericRecord>();
+            avro::GenericRecord& rec = datum.value<avro::GenericRecord>(); // Retrieve the record
             
             for (int fieldNum = 0; fieldNum < rec.fieldCount(); fieldNum++) { // Iterate through fields
                 avro::GenericDatum& field = rec.fieldAt(fieldNum); // Get reference to field
@@ -268,9 +271,36 @@ void readDataFile(const std::string& fileName)
                     }
                 }
             } // Field for loop
-
         }
     }
+    dataReader.close();
+}
+
+// Write a specific type to an avro file including a header/schema
+void writeCPXFile(const std::string& fileName, int numEntries)
+{
+    avro::ValidSchema cpxSchema = avro::compileJsonSchemaFromString(c::cpx::getSchema());
+    avro::DataFileWriter<c::cpx> dataWriter(fileName.c_str(), cpxSchema); // Writer specifically for c::cpx values
+    
+    c::cpx sampleEntry;
+    for (int i = 0; i < numEntries; i++) {
+        dataWriter.write(sampleEntry);
+    }
+
+    dataWriter.close();
+}
+
+// Read a specific type from an avro file including a header/schema
+void readCPXFile(const std::string& fileName)
+{
+    avro::DataFileReader<c::cpx> dataReader(fileName.c_str()); // Reads c::cpx values from the file
+    
+    c::cpx sampleEntry;
+    while(dataReader.read(sampleEntry))
+    {
+        // collect / process entries
+    }
+    
     dataReader.close();
 }
 

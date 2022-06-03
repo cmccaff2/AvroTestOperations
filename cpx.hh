@@ -11,6 +11,15 @@ namespace c {
 struct cpx {
     int re;
     int im;
+    
+    cpx(): re(0), im(0)
+    {}
+    
+    static std::string getSchema()
+    {
+        return "{\"type\": \"record\",\"name\": \"cpx\",\"fields\" : [{\"name\": \"re\", \"type\": \"int\"},{\"name\":  \"im\", \"type\": \"int\"}]}";
+
+    }
 };
 
 }
